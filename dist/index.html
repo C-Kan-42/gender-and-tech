@@ -9,86 +9,169 @@
   <link rel="stylesheet" type="text/css" href="./css/reset.css" />
   <link rel="stylesheet" type="text/css" href="./css/styles.css" />
   <script type="application/javascript" src="./main.js" defer></script>
-
-  <!-- Load in d3 library -->
-  <script src="https://d3js.org/d3.v5.js"></script>
+  
 </head>
+
+<style>
+  .axis line{
+  stroke: #706f6f;
+  stroke-width: 0.5;
+  shape-rendering: crispEdges;
+  }
+
+  /* axis contour */
+  .axis path {
+  stroke: steelblue;
+  stroke-width: 0.7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  }
+
+  /* axis text */
+  .axis text {
+  fill: #2b2929;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 80%;
+  }
+
+  #header-title, #subheader-1 {
+    font-family:Arial, Helvetica, sans-serif
+  }
+
+</style>
 
 <body>
   
   <div class="header">
     <h1 id="header-title">Women in Computing</h1>
-  </div>
-  
-  <svg id="dataviz_area_1" height="500" width="450"></svg>
+  </div> 
+
+  <br>
+  <h2 id="subheader-1">Percent of Women Graduating with Computer-Science Related Degrees</h2>
+  <div id="area"></div>
+  <!-- Load in d3 library -->
+  <script src="https://d3js.org/d3.v5.js"></script>
 
   <script>
-    // set the dimensions and margins of graph
+    //set up dataset
+    var dataset = [];
+    d3.csv('./data/majors.csv').then(function(data) {
+      for (let i = 0; i < data.length - 2; i++) {
+        dataset.push({year: new Date(data[i].Year, 0, 1), value: +data[i].Comp})
+      };
       var margin = { top: 10, right: 30, bottom: 30, left: 60 },
-        width = 460 - margin.left - margin.right,
+        width = 1000 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
-    // append the svg object to the body of the page
-    var svg = d3.select("#dataviz_area_1")
+      // append the svg object to the body of the page
+      var svg = d3.select("#area")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
-        .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
-    //Read the data
-    let dataset = [];
-    d3.csv('./data/majors.csv').then(function(data) {
-      for (let i = 0; i < data.length; i++) {
-        dataset.push({year: new Date(data[i].Year).getFullYear(), value: parseInt(data[i].Comp)})
-      }
-    });
-    // console.log(dataset);
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      //Read the data
 
-    // d3.csv('./data/majors.csv',
-    //   // When reading the csv, I must format variables:
-    //   function (d) {
-    //     return { year: (new Date(d.Year)).getFullYear(), value: d.Comp }
-    //   },
+      // console.log(dataset);
+
+      const xScale = d3.scaleTime()
+        .domain([new Date(1966, 0, 1), new Date(2010, 0, 1)])
+        .rangeRound([0, width]);
+      const yScale = d3.scaleLinear().rangeRound([height, 0])
+        .domain([0, 50]);
+
+      const yaxis = d3.axisLeft().ticks(10).scale(yScale);
+      const xaxis = d3.axisBottom(xScale)
+        .ticks(d3.timeYear)
+        .tickFormat(d3.timeFormat('%Y'))
+      // .scale(xScale);
+
+      svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xaxis);
+      svg.append("g")
+        .attr("class", "axis")
+        .call(yaxis);
+
+      // Add the line
+
+      const line = d3.line()
+        .x(function (d) { return xScale(d.year); })
+        .y(function (d) { return yScale(d.value); })
+
+      svg.append("path")
+        .datum(dataset)
+        .attr("class", "line")
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", "0.7")
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+        .attr("d", line)
+
+      // Add the points 
+      svg
+        .selectAll(".dot")
+        .data(dataset)
+        .enter()
+        .append("circle")
+        .attr("class", "dot")
+        .attr("cx", function (d) { return xScale(d.year) })
+        .attr("cy", function (d) { return yScale(d.value) })
+        .attr("r", 2)
+        .attr("fill", "steelblue")
       
-        // Add X axis --> it is a date format
-        // console.log((new Date(data.Year)).getFullYear())
-    var x = d3
-      .scaleTime()
-      .range([0, width])
-      .domain(d3.extent(dataset, function (d) { return d.year; }))
-    svg.append("g")
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x)) 
-      // .ticks(width / 80).tickSizeOuter(0))           
-    // Add Y axis
-    var y = d3.scaleLinear()
-      .domain([0, 100])
-      .range([height, 0]);
-    svg.append("g")
-      .call(d3.axisLeft(y));
-    // Add the line
-    svg.append("path")
-      .datum(dataset)
-      .attr("fill", "none")
-      .attr("stroke", "black")
-      .attr("stroke-width", 1.5)
-      .attr("d", d3.line()
-        .x(function (d) { return x(d.year) })
-        .y(function (d) { return y(d.value) })
-      )
-    // Add the points 
-    svg
-      .append("g")
-      .selectAll("dot")
-      .data(dataset)
-      .enter()
-      .append("circle")
-      .attr("cx", function (d) { return x(d.year) })
-      .attr("cy", function (d) { return y(d.value) })
-      .attr("r", 5)
-      .attr("fill", "black")
-    
+      //TOOLTIP
+
+      const tooltip = d3.select("#area").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0)
+        .style("position", "absolute")
+        .attr("fill", "#2b2929")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "80%")
+
+      //Add mouse hover functionality
+      svg.selectAll("circles")
+        .data(dataset)
+        .enter()
+        .append("circle")
+        .attr("cx", function (d) { return xScale(d.year); })
+        .attr("cy", function (d) { return yScale(d.value); })
+        .attr('r', 3)
+        .style("opacity", 0)
+        .on('mouseover', function (d) {
+          tooltip.transition()
+            .duration(200)
+            .delay(30)
+            .style("opacity", 1);
+          tooltip.html(d.value)
+            .style("left", (d3.event.pageX + 25) + "px")
+            .style("top", (d3.event.pageY) + "px")
+          const selection = d3.select(this).raise();
+          selection
+            .transition()
+            .delay("20")
+            .duration("200")
+            .attr("r", 6)
+            .style("opacity", 1)
+            .style("fill", "#ed3700");
+        })
+        .on("mouseout", function (d) {
+          tooltip.transition()
+            .duration(100)
+            .style("opacity", 0);
+          const selection = d3.select(this);
+          selection
+            .transition()
+            .delay("20")
+            .duration("200")
+            .attr("r", 5)
+            .style("opacity", 0);
+        });
+    })
   </script>
 </body>
+
 
 </html>
