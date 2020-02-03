@@ -56,20 +56,20 @@
     //set up dataset
     var dataset = [];
     d3.csv('./data/majors.csv').then(function(data) {
-      // for (let i = 0; i < data.length - 2; i++) {
-      //   dataset.push({year: new Date(data[i].Year, 0, 1), value: +data[i].Comp})
-      // };
-      const slices = data.columns.slice(1).map(function(id) {
-        return {
-          id: id,
-          values: data.map(function(d) {
-            return {
-              year: new Date(d.Year),
-              value: +d[id]
-            }
-          })
-        }
-      })
+      for (let i = 0; i < data.length - 2; i++) {
+        dataset.push({year: new Date(data[i].Year, 0, 1), value: +data[i].Comp})
+      };
+      // const slices = data.columns.slice(1).map(function(id) {
+      //   return {
+      //     id: id,
+      //     values: data.map(function(d) {
+      //       return {
+      //         year: new Date(d.Year),
+      //         value: +d[id]
+      //       }
+      //     })
+      //   }
+      // })
       var margin = { top: 10, right: 30, bottom: 30, left: 60 },
         width = 1000 - margin.left - margin.right,
         height = 400 - margin.top - margin.bottom;
